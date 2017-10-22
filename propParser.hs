@@ -4,6 +4,7 @@ import Control.Applicative
 import Control.Monad
 import Data.Char
 import BasicParser as BP
+import PropData
 
 
 
@@ -21,31 +22,13 @@ expr3   = expr4 { Conj expr3 }
 expr4 = expr5 {Not expr5}
 expr5 "(" expr0 ")" | Bool | Variable 
                                   
-
-data Prop =  Const Bool
-           | Var String
-           | Not Prop
-           | Conj Prop Prop
-           | Disj Prop Prop
-           | Impl Prop Prop
-           | Iff Prop Prop
-  deriving (Show,Eq)
 -}
-
-data Prop =  Const Bool
-           | Var String
-           | Not Prop
-           | Conj Prop Prop
-           | Disj Prop Prop
-           | Impl Prop Prop
-           | Iff Prop Prop
-  deriving (Show,Eq)
 
 bool' :: Parser Bool
 bool' = read <$> (BP.string "False" <|> BP.string "True")
 
 bool :: Parser Prop
-bool = PropParser.Const <$> bool'
+bool = BP.spaces *> (PropData.Const <$> bool') <* BP.spaces
 
 alphabet :: [String]
 alphabet = fmap return ['A'..'Z']
@@ -54,9 +37,9 @@ var' :: Parser String
 var' = foldr (\lt acc -> acc <|> BP.string lt) mzero alphabet
 
 var :: Parser Prop
-var = Var <$> var'
+var = BP.spaces *> (Var <$> var') <* BP.spaces
 
-parseOp :: String -> a-> Parser a
+parseOp :: String -> a -> Parser a
 parseOp st f = (flip const) <$> token (string st) <*> return f
 
 
@@ -66,7 +49,7 @@ disj = parseOp "Disj" Disj <|>  parseOp "\\/" Disj
 impl = parseOp "Implies" Impl <|>  parseOp "=>" Impl
 iff =  parseOp "iff" Iff <|>  parseOp "<=>" Iff
 notProp :: Parser (Prop -> Prop)
-notProp = parseOp "not" Not <|> parseOp "!" PropParser.Not
+notProp = parseOp "not" Not <|> parseOp "!" Not
 
 expr0 :: Parser Prop
 expr0 = expr1 `chainl1` iff
@@ -89,18 +72,6 @@ expr5 = bool <|> var <|> parens expr0
 
 propParse :: String -> Prop
 propParse = BP.runParser expr0
-
-main = calculator
-
-calculator :: IO ()
-calculator = undefined
-{--do
-  putStrLn "calculate "
-  a<- getLine
-  if a == "quit" then return () else do
-                                         print $ eval $ run a
-                                         calculator -}
-   
 
 
 

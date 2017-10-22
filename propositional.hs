@@ -1,14 +1,8 @@
 import qualified Data.Map.Strict as M
 import qualified Data.List(nub)
-
-data Prop =  Const Bool
-           | Var String
-           | Not Prop
-           | Conj Prop Prop
-           | Disj Prop Prop
-           | Impl Prop Prop
-           | Iff Prop Prop
-  deriving (Show,Eq)
+import PropParser as PropParser
+import PropData
+import BasicParser
 
 type Variables = String
 
@@ -75,10 +69,32 @@ convertAssignment' assig =
 convertAssignment :: Assignment -> Prop
 convertAssignment = fromJust.convertAssignment'
 
-disjunctiveNormalForm :: Prop -> Maybe Prop
-disjunctiveNormalForm prop = (foldr(\a acc -> if (acc==Nothing) then conv a else Just (Disj (fromJust $ conv a) (fromJust acc))) Nothing trueAssigns)
+disjunctiveNormalForm' :: Prop -> Maybe Prop
+disjunctiveNormalForm' prop = (foldr(\a acc -> if (acc==Nothing) then conv a else Just (Disj (fromJust $ conv a) (fromJust acc))) Nothing trueAssigns)
   where trueAssigns = trueAssignments prop
         conv = convertAssignment'
+
+disjunctiveNormalForm :: Prop -> Prop
+disjunctiveNormalForm = fromJust.disjunctiveNormalForm'
+
+main = logicCalc
+
+logicCalc :: IO ()
+logicCalc = 
+  do
+  putStrLn "Enter your logical concerns:"
+  a<- getLine
+  if a == "quit" then return () else do
+                                         let p = propParse a
+                                         print p
+                                         if (tautology p) then
+                                           putStrLn "The proposition is a tautology."
+                                         else putStrLn "The proposition is not a tautology."
+                                         let dnf = disjunctiveNormalForm p
+                                         putStrLn "The disjunctive normal form is:"
+                                         print dnf
+                                         logicCalc
+   
 
 
         
